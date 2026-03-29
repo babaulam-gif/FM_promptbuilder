@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adrian's Prompt Template Builder</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'Courier New', monospace;
+    --color-bg: #ffffff;
+    --color-bg-secondary: #f5f5f3;
+    --color-bg-info: #e6f1fb;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #6b6b68;
+    --color-text-tertiary: #9b9b98;
+    --color-text-info: #185FA5;
+    --color-border: rgba(0,0,0,0.12);
+    --color-border-secondary: rgba(0,0,0,0.2);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #1c1c1a;
+      --color-bg-secondary: #2a2a28;
+      --color-bg-info: #0c2a44;
+      --color-text-primary: #f0ede8;
+      --color-text-secondary: #a0a09c;
+      --color-text-tertiary: #6b6b68;
+      --color-text-info: #85B7EB;
+      --color-border: rgba(255,255,255,0.12);
+      --color-border-secondary: rgba(255,255,255,0.2);
+    }
+  }
+  body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text-primary); min-height: 100vh; padding: 2rem 1rem; }
+  .container { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1.75rem; }
+  .tab-group-label { font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 6px; margin-top: 1rem; }
+  .tab-group-label:first-child { margin-top: 0; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+  .tabs-section { margin-bottom: 1.25rem; }
+  .tab { padding: 7px 16px; border-radius: 20px; border: 0.5px solid var(--color-border-secondary); font-size: 13px; cursor: pointer; background: var(--color-bg); color: var(--color-text-secondary); transition: all 0.15s; }
+  .tab.active { background: #185FA5; color: #E6F1FB; border-color: #185FA5; font-weight: 500; }
+  .tab.active.media { background: #3B6D11; border-color: #3B6D11; }
+  .tab:hover:not(.active) { background: var(--color-bg-secondary); color: var(--color-text-primary); }
+  .section { margin-bottom: 1.1rem; }
+  .label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; letter-spacing: 0.03em; }
+  input[type=text], select, textarea { width: 100%; font-family: var(--font-sans); font-size: 14px; color: var(--color-text-primary); background: var(--color-bg); border: 0.5px solid var(--color-border); border-radius: var(--radius-md); padding: 9px 12px; }
+  textarea { resize: vertical; min-height: 72px; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #185FA5; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .row2, .row3 { grid-template-columns: 1fr; } }
+  .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 5px 12px; border-radius: 14px; font-size: 12px; cursor: pointer; border: 0.5px solid var(--color-border); background: var(--color-bg); color: var(--color-text-secondary); transition: all 0.12s; user-select: none; }
+  .chip.selected { background: #185FA5; color: #E6F1FB; border-color: #185FA5; }
+  .chip.selected.media { background: #3B6D11; border-color: #3B6D11; }
+  .chip:hover:not(.selected) { background: var(--color-bg-secondary); }
+  .output-box { background: var(--color-bg-secondary); border: 0.5px solid var(--color-border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; font-size: 13px; line-height: 1.7; color: var(--color-text-primary); white-space: pre-wrap; min-height: 80px; font-family: var(--font-mono); }
+  .btn-row { display: flex; gap: 10px; margin-top: 1rem; flex-wrap: wrap; }
+  button { padding: 9px 20px; border-radius: var(--radius-md); border: 0.5px solid var(--color-border-secondary); font-size: 13px; font-weight: 500; cursor: pointer; background: var(--color-bg); color: var(--color-text-primary); transition: all 0.15s; }
+  button:hover { background: var(--color-bg-secondary); }
+  button.primary { background: #185FA5; color: #E6F1FB; border-color: #185FA5; }
+  button.primary:hover { background: #0C447C; }
+  button.primary.media { background: #3B6D11; border-color: #3B6D11; }
+  button.primary.media:hover { background: #27500A; }
+  .tip { font-size: 12px; color: #0F6E56; margin-top: 6px; display: none; }
+  .divider { border: none; border-top: 0.5px solid var(--color-border); margin: 1.25rem 0; }
+  .preview-label { font-size: 12px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 8px; }
+  #output-section { display: none; margin-top: 1.25rem; }
+  .info-bar { background: var(--color-bg-info); border-radius: var(--radius-md); padding: 10px 14px; font-size: 12px; color: var(--color-text-info); margin-bottom: 1.1rem; line-height: 1.5; }
+  .tool-hint { font-size: 11px; color: var(--color-text-tertiary); margin-top: 5px; line-height: 1.5; display: none; }
+  .tool-hint.visible { display: block; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Prompt Template Builder</h1>
+  <p class="subtitle">Build precise prompts for FM, training, contracts, research, images, and video.</p>
+
+  <div class="tabs-section">
+    <div class="tab-group-label">Text prompts</div>
+    <div class="tabs" id="text-tabs">
+      <div class="tab active" onclick="switchTab('fm')">FM Proposal</div>
+      <div class="tab" onclick="switchTab('training')">Training Content</div>
+      <div class="tab" onclick="switchTab('contract')">Contract Review</div>
+      <div class="tab" onclick="switchTab('analysis')">Analysis / Research</div>
+      <div class="tab" onclick="switchTab('custom')">Custom</div>
+    </div>
+  </div>
+
+  <div class="tabs-section">
+    <div class="tab-group-label">Image &amp; video prompts</div>
+    <div class="tabs" id="media-tabs">
+      <div class="tab" onclick="switchTab('image')">Image Generation</div>
+      <div class="tab" onclick="switchTab('video')">Video Generation</div>
+    </div>
+  </div>
+
+  <!-- ── FM ── -->
+  <div id="fm-panel">
+    <div class="row2">
+      <div class="section"><div class="label">Client / Project name</div><input type="text" id="fm-client" placeholder="e.g. Montfort Care, FLEX-MC-1149"></div>
+      <div class="section"><div class="label">Output format</div><select id="fm-format"><option>Word document (.docx)</option><option>HTML page</option><option>Bullet point summary</option><option>Table</option><option>Email draft</option></select></div>
+    </div>
+    <div class="section"><div class="label">Task description</div><textarea id="fm-task" placeholder="e.g. Draft a revised scope of works for a 30-site phased rollout covering preventive maintenance, reactive works, and AI OPEX tracking"></textarea></div>
+    <div class="row2">
+      <div class="section"><div class="label">Audience / Reader</div><input type="text" id="fm-audience" placeholder="e.g. Procurement officer, operations head"></div>
+      <div class="section"><div class="label">Tone</div><select id="fm-tone"><option>Professional and formal</option><option>Concise and direct</option><option>Persuasive / commercial</option><option>Technical and detailed</option></select></div>
+    </div>
+    <div class="section"><div class="label">Standards / Compliance to reference (optional)</div><input type="text" id="fm-standards" placeholder="e.g. SS 530, SS 553, BCA Green Mark, NEA Legionella, ISO 41001"></div>
+    <div class="section"><div class="label">What NOT to include</div><input type="text" id="fm-exclude" placeholder="e.g. Don't include pricing, don't assume client knows FM jargon"></div>
+    <div class="section"><div class="label">Success looks like...</div><input type="text" id="fm-success" placeholder="e.g. Client can approve this without further clarification"></div>
+  </div>
+
+  <!-- ── TRAINING ── -->
+  <div id="training-panel" style="display:none">
+    <div class="row2">
+      <div class="section"><div class="label">Course / module title</div><input type="text" id="tr-title" placeholder="e.g. Gen AI for FM Practitioners"></div>
+      <div class="section"><div class="label">Output format</div><select id="tr-format"><option>Interactive HTML course</option><option>Word document guide</option><option>Slide deck outline</option><option>Lesson plan</option><option>Quiz / assessment</option></select></div>
+    </div>
+    <div class="section"><div class="label">Learning objective</div><textarea id="tr-objective" placeholder="e.g. Learners can apply the RACE prompting framework to write maintenance reports using Gen AI tools"></textarea></div>
+    <div class="row2">
+      <div class="section"><div class="label">Learner profile</div><input type="text" id="tr-learner" placeholder="e.g. First-year marketing students, FM technicians with no AI background"></div>
+      <div class="section"><div class="label">Experience level</div><select id="tr-level"><option>Complete beginner</option><option>Some exposure</option><option>Intermediate</option><option>Advanced practitioner</option></select></div>
+    </div>
+    <div class="section"><div class="label">Singapore-specific context (optional)</div><input type="text" id="tr-sg" placeholder="e.g. BCA Green Mark, WSQ framework, SkillsFuture"></div>
+    <div class="section"><div class="label">What NOT to include</div><input type="text" id="tr-exclude" placeholder="e.g. No technical jargon, no US-centric examples"></div>
+  </div>
+
+  <!-- ── CONTRACT ── -->
+  <div id="contract-panel" style="display:none">
+    <div class="row2">
+      <div class="section"><div class="label">Document / Agreement name</div><input type="text" id="ct-name" placeholder="e.g. Trainer collaboration agreement with WAFA"></div>
+      <div class="section"><div class="label">Jurisdiction</div><select id="ct-juri"><option>Singapore</option><option>Malaysia</option><option>Singapore + Malaysia (cross-border)</option><option>Other</option></select></div>
+    </div>
+    <div class="section"><div class="label">My role in this agreement</div><input type="text" id="ct-role" placeholder="e.g. Independent trainer, subcontractor, service provider"></div>
+    <div class="section"><div class="label">Specific concern or focus area</div><textarea id="ct-concern" placeholder="e.g. Liability clauses are too one-sided — identify risks and suggest fairer alternatives"></textarea></div>
+    <div class="section"><div class="label">Desired output</div><select id="ct-output"><option>Risk summary with recommendations</option><option>Redlined clause suggestions</option><option>Plain-English summary</option><option>Negotiation talking points</option></select></div>
+    <div class="section"><div class="label">What NOT to do</div><input type="text" id="ct-exclude" placeholder="e.g. Don't give me generic legal boilerplate, flag only material risks"></div>
+  </div>
+
+  <!-- ── ANALYSIS ── -->
+  <div id="analysis-panel" style="display:none">
+    <div class="section"><div class="label">Topic / Question</div><textarea id="an-topic" placeholder="e.g. How would a US-Iran conflict scenario affect gold and silver prices in Q2 2026?"></textarea></div>
+    <div class="row2">
+      <div class="section"><div class="label">Framework (optional)</div><input type="text" id="an-framework" placeholder="e.g. Scenario-based probabilistic, PESTLE, SWOT"></div>
+      <div class="section"><div class="label">Output format</div><select id="an-format"><option>Structured written analysis</option><option>Scenario table (best / base / worst)</option><option>Bullet point brief</option><option>Executive summary</option></select></div>
+    </div>
+    <div class="section"><div class="label">Context / constraints</div><input type="text" id="an-context" placeholder="e.g. Singapore investor perspective, focus on actionable implications"></div>
+    <div class="section"><div class="label">What NOT to include</div><input type="text" id="an-exclude" placeholder="e.g. No generic disclaimers, no basic definitions I already know"></div>
+    <div class="section"><div class="label">Success looks like...</div><input type="text" id="an-success" placeholder="e.g. I can make a swap decision based on this output"></div>
+  </div>
+
+  <!-- ── CUSTOM ── -->
+  <div id="custom-panel" style="display:none">
+    <div class="section"><div class="label">Role — set the context for Claude</div><input type="text" id="cu-role" placeholder="e.g. You are a senior FM consultant reviewing a proposal"></div>
+    <div class="section"><div class="label">Task — what you need done</div><textarea id="cu-task" placeholder="e.g. Review the attached scope of works and flag any gaps in coverage or ambiguous terms"></textarea></div>
+    <div class="row2">
+      <div class="section"><div class="label">Audience</div><input type="text" id="cu-audience" placeholder="Who will read/use this output?"></div>
+      <div class="section"><div class="label">Format</div><input type="text" id="cu-format" placeholder="e.g. Numbered list, Word doc, table"></div>
+    </div>
+    <div class="section"><div class="label">Constraints — what NOT to do</div><input type="text" id="cu-exclude" placeholder="e.g. Don't pad the response, don't assume context I haven't given"></div>
+    <div class="section"><div class="label">Success criteria</div><input type="text" id="cu-success" placeholder="e.g. Output is ready to send without editing"></div>
+  </div>
+
+  <!-- ── IMAGE ── -->
+  <div id="image-panel" style="display:none">
+    <div class="info-bar">Generates a ready-to-paste prompt formatted for your chosen tool. DALL-E uses natural language; syntax differences are handled automatically.</div>
+
+    <div class="section">
+      <div class="label">Target tool</div>
+      <select id="img-tool" onchange="updateImgHint()">
+        <option value="dalle">ChatGPT / DALL-E</option>
+        <option value="canva">Canva AI</option>
+      </select>
+      <div class="tool-hint" id="img-hint-dalle">DALL-E works best with descriptive natural language sentences. Be specific about setting, mood, and style.</div>
+      <div class="tool-hint" id="img-hint-canva">Canva AI responds well to concise phrase-based prompts. Keep it clean and visual.</div>
+    </div>
+
+    <div class="section">
+      <div class="label">Use case</div>
+      <select id="img-usecase" onchange="updateImgPlaceholders()">
+        <option value="general">General / all purposes</option>
+        <option value="social">Social media content</option>
+        <option value="fm">FM proposal graphic</option>
+        <option value="training">Training course visual</option>
+      </select>
+    </div>
+
+    <div class="section"><div class="label">Subject — what should be in the image?</div><textarea id="img-subject" placeholder="e.g. A facilities manager inspecting an HVAC system on a rooftop in Singapore, early morning golden light"></textarea></div>
+
+    <div class="row2">
+      <div class="section">
+        <div class="label">Art style</div>
+        <div class="chip-group" id="img-style-chips">
+          <div class="chip" data-val="photorealistic" onclick="toggleChip(this,'img-style')">Photorealistic</div>
+          <div class="chip" data-val="cinematic" onclick="toggleChip(this,'img-style')">Cinematic</div>
+          <div class="chip" data-val="flat illustration" onclick="toggleChip(this,'img-style')">Flat illustration</div>
+          <div class="chip" data-val="editorial photography" onclick="toggleChip(this,'img-style')">Editorial photo</div>
+          <div class="chip" data-val="isometric 3D" onclick="toggleChip(this,'img-style')">Isometric 3D</div>
+          <div class="chip" data-val="minimalist graphic" onclick="toggleChip(this,'img-style')">Minimalist</div>
+          <div class="chip" data-val="watercolour" onclick="toggleChip(this,'img-style')">Watercolour</div>
+          <div class="chip" data-val="infographic-style" onclick="toggleChip(this,'img-style')">Infographic</div>
+        </div>
+        <input type="text" id="img-style-custom" placeholder="Or type a custom style..." style="margin-top:8px;">
+      </div>
+      <div class="section">
+        <div class="label">Mood / atmosphere</div>
+        <div class="chip-group">
+          <div class="chip" data-val="professional and clean" onclick="toggleChip(this,'img-mood')">Professional</div>
+          <div class="chip" data-val="warm and inviting" onclick="toggleChip(this,'img-mood')">Warm</div>
+          <div class="chip" data-val="dramatic" onclick="toggleChip(this,'img-mood')">Dramatic</div>
+          <div class="chip" data-val="clean and minimal" onclick="toggleChip(this,'img-mood')">Clean</div>
+          <div class="chip" data-val="energetic and dynamic" onclick="toggleChip(this,'img-mood')">Energetic</div>
+          <div class="chip" data-val="calm and serene" onclick="toggleChip(this,'img-mood')">Calm</div>
+          <div class="chip" data-val="bold and eye-catching" onclick="toggleChip(this,'img-mood')">Bold</div>
+          <div class="chip" data-val="trustworthy and authoritative" onclick="toggleChip(this,'img-mood')">Trustworthy</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row3">
+      <div class="section"><div class="label">Lighting</div><select id="img-lighting"><option value="">Not specified</option><option>Natural daylight</option><option>Golden hour</option><option>Overcast / soft</option><option>Studio lighting</option><option>Neon / artificial</option><option>Low light / dramatic</option></select></div>
+      <div class="section"><div class="label">Aspect ratio</div><select id="img-ratio"><option value="">Not specified</option><option value="16:9">16:9 — landscape / slide</option><option value="1:1">1:1 — square / social</option><option value="9:16">9:16 — portrait / story</option><option value="4:3">4:3 — standard</option><option value="3:2">3:2 — photo</option></select></div>
+      <div class="section"><div class="label">Shot type</div><select id="img-shot"><option value="">Not specified</option><option>Wide shot</option><option>Medium shot</option><option>Close-up</option><option>Aerial / bird's eye</option><option>Eye-level</option><option>Low angle</option></select></div>
+    </div>
+
+    <div class="section"><div class="label">Colours / palette (optional)</div><input type="text" id="img-colors" placeholder="e.g. Muted blues and greys, navy and gold brand colours, Singapore skyline tones"></div>
+    <div class="section"><div class="label">What NOT to include (negative prompt)</div><input type="text" id="img-negative" placeholder="e.g. No text overlays, no watermarks, no cartoon style, no cluttered background"></div>
+    <div class="section"><div class="label">Platform / size context (optional)</div><input type="text" id="img-platform" placeholder="e.g. LinkedIn post, Instagram story, PowerPoint slide, A4 proposal cover"></div>
+  </div>
+
+  <!-- ── VIDEO ── -->
+  <div id="video-panel" style="display:none">
+    <div class="info-bar">Generates structured prompts for Runway Gen-4, Kling, and Seedance. Each tool has different strengths — Runway excels at cinematic control, Kling at realism, Seedance at dynamic motion.</div>
+
+    <div class="section">
+      <div class="label">Target tool</div>
+      <select id="vid-tool" onchange="updateVidHint()">
+        <option value="runway">Runway Gen-4</option>
+        <option value="kling">Kling</option>
+        <option value="seedance">Seedance</option>
+      </select>
+      <div class="tool-hint" id="vid-hint-runway">Runway responds well to structured scene + camera instruction format. Separate your scene description from camera directions.</div>
+      <div class="tool-hint" id="vid-hint-kling">Kling prefers comma-separated descriptive phrases. Focus on subject, action, environment, and style.</div>
+      <div class="tool-hint" id="vid-hint-seedance">Seedance (by ByteDance) works best with action-forward descriptions — describe movement explicitly. Include subject, motion, setting, and visual style in sequence.</div>
+    </div>
+
+    <div class="section">
+      <div class="label">Use case</div>
+      <select id="vid-usecase">
+        <option value="general">General / all purposes</option>
+        <option value="social">Social media content</option>
+        <option value="fm">FM proposal background</option>
+        <option value="training">Training course intro / explainer</option>
+      </select>
+    </div>
+
+    <div class="section"><div class="label">Scene description — what happens in the video?</div><textarea id="vid-scene" placeholder="e.g. A technician walks through a modern data centre checking server racks, overhead fluorescent lights, calm and methodical movement"></textarea></div>
+
+    <div class="row2">
+      <div class="section">
+        <div class="label">Camera movement</div>
+        <div class="chip-group">
+          <div class="chip" data-val="static shot" onclick="toggleChip(this,'vid-cam')">Static</div>
+          <div class="chip" data-val="slow pan left" onclick="toggleChip(this,'vid-cam')">Pan left</div>
+          <div class="chip" data-val="slow pan right" onclick="toggleChip(this,'vid-cam')">Pan right</div>
+          <div class="chip" data-val="slow zoom in" onclick="toggleChip(this,'vid-cam')">Zoom in</div>
+          <div class="chip" data-val="slow zoom out" onclick="toggleChip(this,'vid-cam')">Zoom out</div>
+          <div class="chip" data-val="tracking shot following subject" onclick="toggleChip(this,'vid-cam')">Tracking</div>
+          <div class="chip" data-val="aerial drone shot" onclick="toggleChip(this,'vid-cam')">Aerial</div>
+          <div class="chip" data-val="handheld slight movement" onclick="toggleChip(this,'vid-cam')">Handheld</div>
+          <div class="chip" data-val="dolly forward" onclick="toggleChip(this,'vid-cam')">Dolly forward</div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="label">Visual style</div>
+        <div class="chip-group">
+          <div class="chip" data-val="cinematic" onclick="toggleChip(this,'vid-style')">Cinematic</div>
+          <div class="chip" data-val="documentary realism" onclick="toggleChip(this,'vid-style')">Documentary</div>
+          <div class="chip" data-val="corporate clean" onclick="toggleChip(this,'vid-style')">Corporate</div>
+          <div class="chip" data-val="hyper-realistic" onclick="toggleChip(this,'vid-style')">Hyper-realistic</div>
+          <div class="chip" data-val="time-lapse" onclick="toggleChip(this,'vid-style')">Time-lapse</div>
+          <div class="chip" data-val="slow motion" onclick="toggleChip(this,'vid-style')">Slow motion</div>
+          <div class="chip" data-val="social media vertical" onclick="toggleChip(this,'vid-style')">Social vertical</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row3">
+      <div class="section"><div class="label">Duration</div><select id="vid-duration"><option value="5 seconds">5 seconds</option><option value="10 seconds">10 seconds</option><option value="15 seconds">15 seconds</option><option value="30 seconds">30 seconds</option></select></div>
+      <div class="section"><div class="label">Lighting</div><select id="vid-lighting"><option value="">Not specified</option><option>Natural daylight</option><option>Golden hour</option><option>Fluorescent / indoor</option><option>Studio / clean</option><option>Low light / moody</option></select></div>
+      <div class="section"><div class="label">Aspect ratio</div><select id="vid-ratio"><option value="16:9">16:9 — landscape</option><option value="9:16">9:16 — vertical / story</option><option value="1:1">1:1 — square</option></select></div>
+    </div>
+
+    <div class="section"><div class="label">Mood / tone</div><input type="text" id="vid-mood" placeholder="e.g. Calm and professional, high-energy and dynamic, warm and human"></div>
+    <div class="section"><div class="label">What NOT to include</div><input type="text" id="vid-negative" placeholder="e.g. No faces, no text overlays, no fast cuts, no shaky camera"></div>
+    <div class="section"><div class="label">Platform / output context (optional)</div><input type="text" id="vid-platform" placeholder="e.g. LinkedIn video post, Instagram reel, training LMS intro, proposal presentation loop"></div>
+  </div>
+
+  <hr class="divider">
+  <div class="btn-row">
+    <button class="primary" id="gen-btn" onclick="generate()">Generate prompt</button>
+    <button onclick="clearAll()">Clear</button>
+  </div>
+
+  <div id="output-section">
+    <div class="preview-label">Your prompt — copy and paste this</div>
+    <div class="output-box" id="output-text"></div>
+    <div class="btn-row">
+      <button onclick="copyPrompt()">Copy to clipboard</button>
+    </div>
+    <div class="tip" id="copy-msg">Copied to clipboard</div>
+  </div>
+</div>
+
+<script>
+let currentTab = 'fm';
+const chipState = {};
+
+function toggleChip(el, group) {
+  if (!chipState[group]) chipState[group] = null;
+  if (chipState[group] === el) {
+    el.classList.remove('selected');
+    chipState[group] = null;
+  } else {
+    if (chipState[group]) chipState[group].classList.remove('selected');
+    el.classList.add('selected');
+    chipState[group] = el;
+  }
+}
+
+function chipVal(group) {
+  return chipState[group] ? chipState[group].dataset.val : '';
+}
+
+const allTabs = ['fm','training','contract','analysis','custom','image','video'];
+
+function switchTab(tab) {
+  currentTab = tab;
+  const isMedia = ['image','video'].includes(tab);
+  document.querySelectorAll('#text-tabs .tab').forEach((t, i) => {
+    t.classList.toggle('active', ['fm','training','contract','analysis','custom'][i] === tab);
+  });
+  document.querySelectorAll('#media-tabs .tab').forEach((t, i) => {
+    const active = ['image','video'][i] === tab;
+    t.classList.toggle('active', active);
+    if (active) t.classList.add('media'); else t.classList.remove('media');
+  });
+  allTabs.forEach(p => { document.getElementById(p+'-panel').style.display = p===tab ? 'block' : 'none'; });
+  const btn = document.getElementById('gen-btn');
+  if (isMedia) btn.classList.add('media'); else btn.classList.remove('media');
+  document.getElementById('output-section').style.display = 'none';
+  if (tab === 'image') updateImgHint();
+  if (tab === 'video') updateVidHint();
+}
+
+function updateImgHint() {
+  const tool = document.getElementById('img-tool').value;
+  document.querySelectorAll('[id^="img-hint-"]').forEach(el => el.classList.remove('visible'));
+  const hint = document.getElementById('img-hint-' + tool);
+  if (hint) hint.classList.add('visible');
+}
+
+function updateVidHint() {
+  const tool = document.getElementById('vid-tool').value;
+  document.querySelectorAll('[id^="vid-hint-"]').forEach(el => el.classList.remove('visible'));
+  const hint = document.getElementById('vid-hint-' + tool);
+  if (hint) hint.classList.add('visible');
+}
+
+function updateImgPlaceholders() {
+  const usecase = document.getElementById('img-usecase').value;
+  const subjectEl = document.getElementById('img-subject');
+  const placeholders = {
+    social: 'e.g. A confident Singapore professional at a co-working space, natural window light, candid moment',
+    fm: 'e.g. An FM technician performing a preventive maintenance check on a commercial chiller, professional setting',
+    training: 'e.g. A diverse group of adult learners engaged in a workshop, bright modern classroom, Singapore context',
+    general: 'e.g. A facilities manager inspecting an HVAC system on a rooftop in Singapore, early morning golden light'
+  };
+  subjectEl.placeholder = placeholders[usecase] || placeholders.general;
+}
+
+function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+function generate() {
+  let prompt = '';
+
+  if (currentTab === 'fm') {
+    const task = val('fm-task'); if (!task) { alert('Please enter a task description.'); return; }
+    const client=val('fm-client'), audience=val('fm-audience'), format=val('fm-format'), tone=val('fm-tone'), standards=val('fm-standards'), exclude=val('fm-exclude'), success=val('fm-success');
+    prompt = `You are a senior facilities management consultant in Singapore.\n\nTask: ${task}${client?'\nProject: '+client:''}\n\nAudience: ${audience||'Not specified — use professional FM reader as default'}\nTone: ${tone}\nOutput format: ${format}`;
+    if (standards) prompt += `\n\nStandards to reference: ${standards}`;
+    if (exclude) prompt += `\n\nDo NOT include: ${exclude}`;
+    if (success) prompt += `\n\nSuccess criteria: ${success}`;
+
+  } else if (currentTab === 'training') {
+    const objective=val('tr-objective'); if (!objective) { alert('Please enter a learning objective.'); return; }
+    const title=val('tr-title'), learner=val('tr-learner'), level=val('tr-level'), format=val('tr-format'), sg=val('tr-sg'), exclude=val('tr-exclude');
+    prompt = `You are an instructional designer creating training content for a Singapore-based audience.\n\nCourse: ${title||'Not specified'}\nLearning objective: ${objective}\nLearner profile: ${learner||'Not specified'}\nExperience level: ${level}\nOutput format: ${format}`;
+    if (sg) prompt += `\n\nSingapore-specific context to incorporate: ${sg}`;
+    if (exclude) prompt += `\n\nDo NOT include: ${exclude}`;
+    prompt += '\n\nMake the content practical, example-driven, and directly applicable — not generic or theoretical.';
+
+  } else if (currentTab === 'contract') {
+    const concern=val('ct-concern'); if (!concern) { alert('Please describe your concern.'); return; }
+    const name=val('ct-name'), juri=val('ct-juri'), role=val('ct-role'), output=val('ct-output'), exclude=val('ct-exclude');
+    prompt = `You are a commercial contracts advisor familiar with ${juri} jurisdiction.\n\nDocument: ${name||'Agreement provided below'}\nMy role: ${role||'Service provider / contractor'}\nFocus: ${concern}\nDesired output: ${output}`;
+    if (exclude) prompt += `\n\nDo NOT: ${exclude}`;
+    prompt += '\n\nNote: This is for my own informed decision-making, not formal legal advice.';
+
+  } else if (currentTab === 'analysis') {
+    const topic=val('an-topic'); if (!topic) { alert('Please enter your topic or question.'); return; }
+    const framework=val('an-framework'), format=val('an-format'), context=val('an-context'), exclude=val('an-exclude'), success=val('an-success');
+    prompt = `You are a senior research analyst.\n\nQuestion: ${topic}\nOutput format: ${format}`;
+    if (framework) prompt += `\nFramework: ${framework}`;
+    if (context) prompt += `\nContext / constraints: ${context}`;
+    if (exclude) prompt += `\n\nDo NOT include: ${exclude}`;
+    if (success) prompt += `\nSuccess criteria: ${success}`;
+
+  } else if (currentTab === 'custom') {
+    const task=val('cu-task'); if (!task) { alert('Please enter a task.'); return; }
+    const role=val('cu-role'), audience=val('cu-audience'), format=val('cu-format'), exclude=val('cu-exclude'), success=val('cu-success');
+    if (role) prompt += `${role}\n\n`;
+    prompt += `Task: ${task}`;
+    if (audience) prompt += `\nAudience: ${audience}`;
+    if (format) prompt += `\nOutput format: ${format}`;
+    if (exclude) prompt += `\n\nDo NOT: ${exclude}`;
+    if (success) prompt += `\nSuccess criteria: ${success}`;
+
+  } else if (currentTab === 'image') {
+    const subject=val('img-subject'); if (!subject) { alert('Please describe your image subject.'); return; }
+    const tool=val('img-tool'), usecase=val('img-usecase');
+    const style=chipVal('img-style')||val('img-style-custom'), mood=chipVal('img-mood');
+    const lighting=val('img-lighting'), ratio=val('img-ratio'), shot=val('img-shot');
+    const colors=val('img-colors'), negative=val('img-negative'), platform=val('img-platform');
+
+    const usecaseMap = { social:'social media content', fm:'FM proposal graphic', training:'training course visual', general:'' };
+    const usecaseTag = usecaseMap[usecase] || '';
+
+    if (tool === 'dalle') {
+      prompt = `Create a ${style||'photorealistic'} image of ${subject}.`;
+      if (mood) prompt += ` The mood should be ${mood}.`;
+      if (lighting) prompt += ` Lighting: ${lighting}.`;
+      if (shot) prompt += ` Use a ${shot}.`;
+      if (colors) prompt += ` Colour palette: ${colors}.`;
+      if (ratio) prompt += ` Aspect ratio: ${ratio}.`;
+      if (usecaseTag) prompt += ` This is intended for use as ${usecaseTag}.`;
+      if (negative) prompt += `\n\nDo not include: ${negative}.`;
+      if (platform) prompt += `\nOptimise for: ${platform}.`;
+
+    } else if (tool === 'canva') {
+      prompt = subject;
+      if (style) prompt += `, ${style} style`;
+      if (mood) prompt += `, ${mood}`;
+      if (lighting) prompt += `, ${lighting} lighting`;
+      if (shot) prompt += `, ${shot}`;
+      if (colors) prompt += `, ${colors}`;
+      if (ratio) prompt += `\nSize: ${ratio}`;
+      if (negative) prompt += `\nAvoid: ${negative}`;
+      if (platform) prompt += `\nPlatform: ${platform}`;
+    }
+
+    if (usecaseTag && tool !== 'dalle') prompt += `\n\n[Use case: ${usecaseTag}]`;
+
+  } else if (currentTab === 'video') {
+    const scene=val('vid-scene'); if (!scene) { alert('Please describe your scene.'); return; }
+    const tool=val('vid-tool'), usecase=val('vid-usecase');
+    const cam=chipVal('vid-cam'), style=chipVal('vid-style');
+    const duration=val('vid-duration'), lighting=val('vid-lighting'), ratio=val('vid-ratio');
+    const mood=val('vid-mood'), negative=val('vid-negative'), platform=val('vid-platform');
+
+    const usecaseMap = { social:'social media content', fm:'FM proposal background video', training:'training course intro / explainer', general:'' };
+    const usecaseTag = usecaseMap[usecase] || '';
+
+    if (tool === 'runway') {
+      prompt = scene;
+      const details = [];
+      if (cam) details.push(`camera: ${cam}`);
+      if (style) details.push(`style: ${style}`);
+      if (lighting) details.push(`lighting: ${lighting}`);
+      if (mood) details.push(`mood: ${mood}`);
+      if (details.length) prompt += '\n\n' + details.join(', ');
+      prompt += `\n\nDuration: ${duration} | Aspect ratio: ${ratio}`;
+      if (negative) prompt += `\nNegative: ${negative}`;
+
+    } else if (tool === 'kling') {
+      const parts = [scene];
+      if (style) parts.push(style);
+      if (cam) parts.push(cam);
+      if (mood) parts.push(mood);
+      if (lighting) parts.push(lighting);
+      prompt = parts.join(', ');
+      prompt += `\n\nDuration: ${duration} | Aspect ratio: ${ratio}`;
+      if (negative) prompt += `\nNegative prompt: ${negative}`;
+
+    } else if (tool === 'seedance') {
+      // Seedance (ByteDance) — action-forward, motion-explicit format
+      prompt = scene;
+      if (cam) prompt += `, ${cam}`;
+      if (style) prompt += `, ${style} style`;
+      if (lighting) prompt += `, ${lighting} lighting`;
+      if (mood) prompt += `, ${mood} atmosphere`;
+      prompt += `\n\nMotion emphasis: Describe movement explicitly — subject moves naturally and fluidly throughout.`;
+      prompt += `\nDuration: ${duration} | Aspect ratio: ${ratio}`;
+      if (negative) prompt += `\nNegative: ${negative}`;
+    }
+
+    if (usecaseTag) prompt += `\n\n[Use case: ${usecaseTag}]`;
+    if (platform) prompt += `\n[Platform: ${platform}]`;
+  }
+
+  document.getElementById('output-text').textContent = prompt;
+  document.getElementById('output-section').style.display = 'block';
+}
+
+function copyPrompt() {
+  const text = document.getElementById('output-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const msg = document.getElementById('copy-msg');
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display = 'none', 2000);
+  });
+}
+
+function clearAll() {
+  document.querySelectorAll('input[type=text], textarea').forEach(el => el.value = '');
+  document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+  Object.keys(chipState).forEach(k => { if (chipState[k]) { chipState[k].classList.remove('selected'); chipState[k]=null; } });
+  document.getElementById('output-section').style.display = 'none';
+}
+</script>
+</body>
+</html>
